@@ -119,23 +119,6 @@ func queryWhois(q *Query) ([]QueryResult, error) {
 	return []QueryResult{result}, nil
 }
 
-func queryCname(q *Query) ([]QueryResult, error) {
-	details, err := dns.CheckDNSRecord(q.Target.AsUrl(), "CNAME")
-
-	if err != nil {
-		return []QueryResult{}, err
-	}
-
-	results := []QueryResult{}
-	for _, answer := range details.Answers() {
-		results = append(results, &MapResult{map[string]string{
-			"type":   answer[1],
-			"answer": answer[0],
-		}})
-	}
-	return results, nil
-}
-
 func queryQtype(qtype string) dnsQueryExecutor {
 	qtype = strings.ToLower(qtype)
 

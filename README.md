@@ -8,14 +8,14 @@ Query for facts related to your site!
 
 ```
 # Running tests with specific prefix
-go test -v ./query -run TestHttp
+go test -v ./ -run TestHttp
 
 
 # Test some code
-staticcheck github.com/rezen/awwwdit/query
+staticcheck github.com/rezen/query
 
 # Building
-go build -o awwwq cmd/awwwdit/main.go
+go build -o _builds/awwwq cmd/awwwdit/main.go
 
 # ... or using Docker
 docker-compose up

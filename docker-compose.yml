@@ -1,8 +1,42 @@
 version: '3'
 services:
-  builder:
+  build-linux:
     image: golang:1.11
     volumes:
       - ./:/go/src/github.com/rezen/query
     working_dir: /go/src/github.com/rezen/query
-    command: go build -v -o awwwq cmd/awwwdit/main.go
+    environment:
+      GOOS: linux
+      GOARCH: amd64
+    command: go build -v -o _builds/awwwq-linux-amd64 cmd/awwwq/main.go
+
+  build-darwin:
+    image: golang:1.11
+    volumes:
+      - ./:/go/src/github.com/rezen/query
+    working_dir: /go/src/github.com/rezen/query
+    environment:
+      GOOS: darwin
+      GOARCH: amd64
+    command: go build -v -o _builds/awwwq-darwin-amd64 cmd/awwwq/main.go
+
+  build-windows:
+    image: golang:1.11
+    volumes:
+      - ./:/go/src/github.com/rezen/query
+    working_dir: /go/src/github.com/rezen/query
+    environment:
+      GOOS: windows
+      GOARCH: amd64
+    command: go build -v -o _builds/awwwq-win-amd64 cmd/awwwq/main.go
+
+  package:
+    depends_on:
+      - build-darwin
+      - build-linux
+      - build-windows
+    image: ubuntu:16.04
+    volumes:
+      - ./_builds:/go/_builds
+    working_dir: /go/_builds
+    command: bash -c 'while [ `ls -l | wc -l` -lt  4 ]; do sleep 1; done; find ./ -type f -name "awwwq*"  ! -name "*.*" | xargs -I{} tar czvf {}.tar.gz {} && sha256sum * | tee sums.txt'
