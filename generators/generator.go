@@ -3,10 +3,8 @@ package generators
 import (
 	"bytes"
 	"fmt"
-	// "github.com/rezen/awwwdit/query"
-	"github.com/miekg/dns"
-	"github.com/rezen/query/fetch"
-	"github.com/rezen/query/requests/dns"
+	"github.com/rezen/query/dns"
+	"github.com/rezen/query/ssl"
 	"io/ioutil"
 	"reflect"
 	"strings"
@@ -23,8 +21,8 @@ var header = `
 package query
 
 import (
-	"github.com/rezen/query/fetch"
-	"github.com/rezen/query/requests/dns"
+	"github.com/rezen/query/ssl"
+	"github.com/rezen/query/dns"
 	"strings"
 	"strconv"
 )`
@@ -108,7 +106,7 @@ func GetAttrs(s interface{}) []string {
 func GenerateStuff() {
 	types := []interface{}{
 		dns.Whois{},
-		fetch.Certificate{},
+		ssl.Certificate{},
 	}
 
 	tpl := bytes.NewBuffer([]byte(header))
@@ -127,6 +125,7 @@ func GenerateStuff() {
 			}
 			fields := []Field{}
 
+			// @todo sort fields
 			for i := 0; i < t.NumField(); i++ {
 				field := t.Field(i)
 				value, ok := field.Tag.Lookup("json")
@@ -136,6 +135,9 @@ func GenerateStuff() {
 					if len(attr) > 0 {
 						getter := "d.Src." + field.Name
 
+						if field.Type.Name() == "error" {
+							getter += ".Error()"
+						}
 						switch field.Type {
 						case reflect.TypeOf(time.Time{}):
 							getter = getter + ".String()"
@@ -143,6 +145,13 @@ func GenerateStuff() {
 							getter = "strings.Join(" + getter + ", \",\")"
 						case reflect.TypeOf(true):
 							getter = "strconv.FormatBool(" + getter + ")"
+						default:
+
+							_, ok := field.Type.MethodByName("String")
+							if ok {
+								fmt.Println("yay", field.Type)
+								getter += ".String()"
+							}
 						}
 
 						fields = append(fields, Field{
@@ -164,7 +173,7 @@ func GenerateStuff() {
 				fmt.Println(err)
 			}
 
-			ioutil.WriteFile("../query/generated.go", tpl.Bytes(), 0666)
+			ioutil.WriteFile("../generated.go", tpl.Bytes(), 0666)
 
 		}
 	}

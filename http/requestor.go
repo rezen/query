@@ -1,4 +1,4 @@
-package requests
+package http
 
 import (
 	"crypto/md5"

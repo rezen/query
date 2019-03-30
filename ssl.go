@@ -2,7 +2,7 @@ package query
 
 import (
 	"fmt"
-	"github.com/rezen/query/fetch"
+	"github.com/rezen/query/ssl"
 	log "github.com/sirupsen/logrus"
 	"strings"
 	"time"
@@ -36,13 +36,13 @@ func (s *SslQueryer) Validate(q *Query) error {
 	if selector == "*" {
 		return nil
 	}
+
 	for _, v := range s.Selectable() {
 		if v == selector {
 			return nil
 		}
 	}
-	return nil
-	// return ErrorInvalidSelector
+	return ErrorInvalidSelector
 }
 
 func (s *SslQueryer) Exec(q *Query) Transaction {
@@ -53,7 +53,7 @@ func (s *SslQueryer) Exec(q *Query) Transaction {
 		Duration: 0,
 	}
 
-	details, err := fetch.CheckSSL(q.Target.AsUrl())
+	details, err := ssl.CheckSSL(q.Target.AsUrl())
 	txn.Duration = time.Since(start)
 
 	if err != nil {
@@ -66,25 +66,19 @@ func (s *SslQueryer) Exec(q *Query) Transaction {
 	if strings.Contains(selector, "chain") {
 		// @todo
 	}
+	result := &CertificateResult{&details}
 
-	switch selector {
-	case "issuer":
-		txn.Results = append(txn.Results, &TextResult{selector, details.Issuer})
-	case "expiration":
-		txn.Results = append(txn.Results, &TextResult{selector, details.Expiration.String()})
-	case "common-name":
-		txn.Results = append(txn.Results, &TextResult{selector, details.CommonName})
-	case "body":
-		txn.Results = append(txn.Results, &TextResult{selector, details.Body})
-	case "*":
-		txn.Results = append(txn.Results, &CertificateResult{&details})
-	default:
-		txn.Results = append(txn.Results, &CertificateResult{&details})
+	if selector == "*" {
+		txn.Results = append(txn.Results, result)
+	} else if result.HasAttr(selector) {
+		txn.Results = append(txn.Results, &TextResult{selector, result.Attr(selector)})
 	}
 
 	return txn
 }
 
 func (s *SslQueryer) Selectable() []string {
-	return []string{"issuer", "expiration", "common-name", "*"}
+	selectors := (&CertificateResult{}).Attrs()
+	selectors = append(selectors, "*")
+	return selectors
 }

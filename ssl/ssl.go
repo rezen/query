@@ -1,4 +1,4 @@
-package fetch
+package ssl
 
 import (
 	"bytes"
@@ -19,6 +19,7 @@ type Certificate struct {
 	Domains    []string  `json:"domains"`
 	IsWildcard bool      `json:"is_wildcard"`
 	HasExpired bool      `json:"has_expired"`
+	Error      error     `json:"error"`
 }
 
 func DetailsFromChain(chain []*x509.Certificate) Certificate {
@@ -27,7 +28,7 @@ func DetailsFromChain(chain []*x509.Certificate) Certificate {
 	var data bytes.Buffer
 	pem.Encode(&data, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
 
-	return Certificate{
+	certificate := Certificate{
 		Body:       data.String(),
 		CommonName: commonName,
 		Issuer:     strings.Join(cert.Issuer.Organization, " "),
@@ -36,24 +37,59 @@ func DetailsFromChain(chain []*x509.Certificate) Certificate {
 		HasExpired: time.Now().After(cert.NotAfter),
 		IsWildcard: strings.Contains(commonName, "*"),
 	}
+
+	if certificate.IsWildcard {
+		return certificate
+	}
+
+	for _, domain := range certificate.Domains {
+		if strings.Contains(domain, "*") {
+			certificate.IsWildcard = true
+			return certificate
+		}
+	}
+	return certificate
 }
 
 // https://github.com/mozilla/tls-observatory
 func CheckSSL(target *url.URL) (Certificate, error) {
+	var conn *tls.Conn
+	var err1 error
+	var err2 error
+	var details Certificate
+
 	host := target.Host
+
 	if !strings.Contains(host, ":") {
 		host = host + ":443"
 	}
 
 	dialer := &net.Dialer{Timeout: 3 * time.Second}
-	conn, err := tls.DialWithDialer(dialer, "tcp", host, nil)
-	defer conn.Close()
+	// VerifyPeerCertificate
+	conn, err1 = tls.DialWithDialer(dialer, "tcp", host, nil)
 
-	if err != nil {
-		return Certificate{}, err
+	// @todo there has to be a better way than redialing
+	if err1 != nil {
+		config := &tls.Config{InsecureSkipVerify: true}
+		conn, err2 = tls.DialWithDialer(dialer, "tcp", host, config)
 	}
 
+	defer conn.Close()
+
 	chain := conn.ConnectionState().VerifiedChains
-	details := DetailsFromChain(chain[0])
+	chain2 := conn.ConnectionState().PeerCertificates
+	if len(chain) > 0 {
+		details = DetailsFromChain(chain[0])
+
+	} else {
+		details = DetailsFromChain(chain2)
+	}
+
+	if err1 != nil {
+		details.Error = err1
+
+	} else if err2 != nil {
+		details.Error = err2
+	}
 	return details, nil
 }

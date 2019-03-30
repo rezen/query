@@ -2,7 +2,7 @@ package query
 
 import (
 	"github.com/PuerkitoBio/goquery"
-	"github.com/rezen/query/requests"
+	"github.com/rezen/query/http"
 	// "github.com/robertkrimen/otto"
 	log "github.com/sirupsen/logrus"
 	"strings"
@@ -12,7 +12,7 @@ import (
 type DocQuery struct {
 	Target *Target
 	Select []string
-	Txn    *requests.Transaction
+	Txn    *http.Transaction
 	Doc    *goquery.Document
 	// @todo config for querier gets passed on
 	// with custom dns or user-agent etc

@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	lru "github.com/hashicorp/golang-lru"
-	"github.com/rezen/query/requests"
+	"github.com/rezen/query/http"
 	log "github.com/sirupsen/logrus"
 
 	"regexp"
@@ -32,7 +32,7 @@ type HttpQuery struct {
 	FollowRedirects   bool
 	Timeout           int
 	IgnoreBadSSL      bool
-	Txn               *requests.Transaction
+	Txn               *http.Transaction
 	Method            string
 	Data              string
 }
@@ -98,7 +98,7 @@ func (q *HttpQueryer) Query(query *Query) Transaction {
 }
 func (q *HttpQueryer) Prep(query *HttpQuery) *HttpQuery {
 	// @todo cache http request
-	requestor := requests.CreateRequestorWithTarget(query.Target.Url)
+	requestor := http.CreateRequestorWithTarget(query.Target.Url)
 	query.Txn = requestor.Get(query.Path)
 
 	//

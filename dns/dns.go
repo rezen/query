@@ -148,6 +148,12 @@ func questionSrv(hostname string) *dns.Msg {
     return message
 }
 
+func questionPtr(hostname string) *dns.Msg {
+    message := &dns.Msg{}
+    message.SetQuestion(hostname+".", dns.TypePTR)
+    return message
+}
+
 type DnsConfig struct {
     Server    string
     Timeout   int
@@ -248,6 +254,7 @@ func CheckDNS(target *url.URL) ([]*DnsQuery, error) {
         DetailsFromQuestion(questionMx(hostname)),
         DetailsFromQuestion(questionSoa(hostname)),
         DetailsFromQuestion(questionSrv(hostname)),
+        DetailsFromQuestion(questionPtr(hostname)),
     }
 
     if isSub {

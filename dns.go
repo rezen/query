@@ -1,8 +1,9 @@
 package query
 
 import (
-	"github.com/rezen/query/requests/dns"
+	"github.com/rezen/query/dns"
 	log "github.com/sirupsen/logrus"
+	"sort"
 	"strings"
 	"time"
 )
@@ -31,7 +32,12 @@ func (q *DnsQueryer) Validate(query *Query) error {
 }
 
 func (q *DnsQueryer) Selectable() []string {
-	return []string{"a", "cname", "mx", "ns", "ptr", "soa", "srv", "txt", "whois"}
+	keys := []string{}
+	for key := range q.Executors {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func (q *DnsQueryer) Prepare(query *Query) {
@@ -52,18 +58,17 @@ func (q *DnsQueryer) Execute(query *Query) ([]QueryResult, error) {
 	var err error
 	if len(query.Select) == 0 {
 		results = []QueryResult{}
-		err = ErrorNoAttrSelected
-	} else {
-		branch := query.Select[0]
-		executor, exists := q.Executors[branch]
-
-		if !exists {
-			executor = defaultQueryDns
-		}
-
-		results, err = executor(query)
-		q.LastError = err
+		return results, ErrorNoAttrSelected
 	}
+	branch := query.Select[0]
+	executor, exists := q.Executors[branch]
+
+	if !exists {
+		return results, ErrorInvalidSelector
+	}
+
+	results, err = executor(query)
+	q.LastError = err
 
 	if err != nil {
 		q.ErrorCount += 1
@@ -77,7 +82,14 @@ func (q *DnsQueryer) Execute(query *Query) ([]QueryResult, error) {
 func DefaultDnsQueryer() *DnsQueryer {
 	executors := map[string]dnsQueryExecutor{
 		"whois": queryWhois,
+		"*":     queryMostDns,
 	}
+
+	recordTypes := []string{"a", "cname", "mx", "ns", "ptr", "soa", "srv", "txt"}
+	for _, qtype := range recordTypes {
+		executors[qtype] = queryQtype(qtype)
+	}
+
 	return &DnsQueryer{
 		Executors:  executors,
 		LastError:  nil,
@@ -107,9 +119,47 @@ func queryWhois(q *Query) ([]QueryResult, error) {
 	return []QueryResult{result}, nil
 }
 
-func defaultQueryDns(q *Query) ([]QueryResult, error) {
+func queryCname(q *Query) ([]QueryResult, error) {
+	details, err := dns.CheckDNSRecord(q.Target.AsUrl(), "CNAME")
+
+	if err != nil {
+		return []QueryResult{}, err
+	}
+
+	results := []QueryResult{}
+	for _, answer := range details.Answers() {
+		results = append(results, &MapResult{map[string]string{
+			"type":   answer[1],
+			"answer": answer[0],
+		}})
+	}
+	return results, nil
+}
+
+func queryQtype(qtype string) dnsQueryExecutor {
+	qtype = strings.ToLower(qtype)
+
+	return func(q *Query) ([]QueryResult, error) {
+		details, err := dns.CheckDNSRecord(q.Target.AsUrl(), qtype)
+
+		if err != nil {
+			return []QueryResult{}, err
+		}
+
+		results := []QueryResult{}
+		for _, answer := range details.Answers() {
+			results = append(results, &MapResult{map[string]string{
+				"type":   answer[1],
+				"answer": answer[0],
+			}})
+		}
+		return results, nil
+	}
+
+}
+
+func queryMostDns(q *Query) ([]QueryResult, error) {
 	// @todo default NS lookup
-	qtype := strings.ToUpper(q.Select[0])
 	details, err := dns.CheckDNS(q.Target.AsUrl())
 	results := []QueryResult{}
 
@@ -117,14 +167,13 @@ func defaultQueryDns(q *Query) ([]QueryResult, error) {
 		panic(err)
 	}
 	for _, d := range details {
-		if d.QueryType() == qtype {
-			for _, answer := range d.Answers() {
-				results = append(results, &MapResult{map[string]string{
-					"type":   answer[1],
-					"answer": answer[0],
-				}})
-			}
+		for _, answer := range d.Answers() {
+			results = append(results, &MapResult{map[string]string{
+				"type":   answer[1],
+				"answer": answer[0],
+			}})
 		}
+
 	}
 	return results, nil
 }

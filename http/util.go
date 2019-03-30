@@ -1,4 +1,4 @@
-package requests
+package http
 
 import (
 	"fmt"
@@ -24,15 +24,14 @@ func (m infermap) Float(key string) float64 {
 	return value
 }
 
-func (m infermap) MapStringString(key string) map[string]string  {
+func (m infermap) MapStringString(key string) map[string]string {
 	value := map[string]string{}
 	if m[key] != nil {
-		tmp :=  m[key].(map[string]interface{})
-		for k, v := range  tmp {
+		tmp := m[key].(map[string]interface{})
+		for k, v := range tmp {
 			value[k] = fmt.Sprintf("%v", v) // @todo improve
 		}
 	}
 
 	return value
 }
-
