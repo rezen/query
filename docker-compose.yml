@@ -1,0 +1,8 @@
+version: '3'
+services:
+  builder:
+    image: golang:1.11
+    volumes:
+      - ./:/go/src/github.com/rezen/query
+    working_dir: /go/src/github.com/rezen/query
+    command: go build -v -o awwwq cmd/awwwdit/main.go
