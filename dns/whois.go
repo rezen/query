@@ -20,12 +20,9 @@ type Whois struct {
     RegistrarName string    `json:"registrar_name"`
     NameServers   []string  `json:"ns"`
     DomainDNSSEC  string    `json:"dnssec"`
-    Text          string    `json:"text"`
     Status        []string  `json:"status"`
-}
-
-func (d *Whois) AsText() string {
-    return d.Text
+    Error         error     `json:"error"`
+    Raw           string    `json:"raw"`
 }
 
 func (d *Whois) ToMap() map[string]string {
@@ -37,27 +34,42 @@ func (d *Whois) ToMap() map[string]string {
     }
 }
 
+func parseRecord(whois string) {
+    lines := strings.Split(whois, "\n")
+    for _, line := range lines {
+        parts := strings.Split(line, ":")
+        key := strings.TrimSpace(parts[0])
+        fmt.Println(key)
+    }
+}
+
 // @todo include duration of request
 func CheckWhoisNet(target *url.URL) *Whois {
-    _, hostname := IsSubDomain(target.Host)
+    hostname := target.Hostname()
+
+    if len(hostname) == 0 && target.Scheme == "" {
+        hostname = target.String()
+    }
+
+    _, hostname = IsSubDomain(hostname)
 
     if strings.Contains(hostname, ":") {
         hostname, _, _ = net.SplitHostPort(hostname)
     }
 
-    record, _ := whois.Fetch(hostname)
-    result, _ := parser.Parse(record.String())
+    record, err := whois.Fetch(hostname)
 
-    // fmt.Println(record.String())
-    fmt.Println("")
+    if err != nil {
+        return &Whois{Error: err}
+    }
+
+    result, _ := parser.Parse(record.String())
 
     createdAt, err := time.Parse(time.RFC3339, result.Registrar.CreatedDate)
     expiresAt, err := time.Parse(time.RFC3339, result.Registrar.ExpirationDate)
 
-    fmt.Println(err)
-
     details := &Whois{
-        Text:          record.String(),
+        Raw:           record.String(),
         Admin:         result.Admin.Name,
         AdminEmail:    result.Admin.Email,
         Organization:  result.Admin.Organization,

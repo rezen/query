@@ -217,14 +217,13 @@ func DefaultQueryer() *EntryQueryer {
 
 	return &EntryQueryer{
 		Executors2: map[string]Queryable{
-			"http": DefaultHttpQueryer(),
-			"ssl":  DefaultSslQueryer(),
-			"dns":  DefaultDnsQueryer(),
+			"http":   DefaultHttpQueryer(),
+			"ssl":    DefaultSslQueryer(),
+			"domain": DefaultDnsQueryer(),
 		},
 		Logger: logger,
 		Cache:  cache,
 	}
-
 }
 
 type Transaction struct {

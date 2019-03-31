@@ -15,6 +15,7 @@ import (
 type DnsQuery struct {
     query   *dns.Msg
     answers [][]string
+    Server  string
 }
 
 type Answer struct {
@@ -65,7 +66,7 @@ func (d *DnsQuery) Id() string {
 }
 
 func DetailsFromQuestion(q *dns.Msg) *DnsQuery {
-    return &DnsQuery{q, [][]string{}}
+    return &DnsQuery{q, [][]string{}, ""}
 }
 
 func (d *DnsQuery) AddAnswer(answer interface{}) {
@@ -185,6 +186,10 @@ func CheckDNSRecord(target *url.URL, qtype string) (*DnsQuery, error) {
         hostname, _, _ = net.SplitHostPort(hostname)
     }
 
+    if len(hostname) == 0 {
+        hostname = target.String()
+    }
+
     ip := net.ParseIP(hostname)
 
     // If the hostname is actually an IP, ignore it
@@ -192,7 +197,6 @@ func CheckDNSRecord(target *url.URL, qtype string) (*DnsQuery, error) {
         return &DnsQuery{}, nil
     }
 
-    fmt.Println("Hostname", hostname)
     var query *DnsQuery
     switch qtype {
     case "ns":
@@ -216,6 +220,7 @@ func CheckDNSRecord(target *url.URL, qtype string) (*DnsQuery, error) {
     if err != nil {
         return query, err
     }
+    query.Server = config.Server
     for _, answer := range response.Answer {
         query.AddAnswer(answer)
     }
@@ -263,9 +268,12 @@ func CheckDNS(target *url.URL) ([]*DnsQuery, error) {
     }
 
     for _, qry := range queries {
+        qry.Server = config.Server
+
         // @todo cache query
         response, _, err := client.Exchange(qry.query, requestor.Config.Server)
         if err != nil {
+            fmt.Println(err)
             continue
         }
 

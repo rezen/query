@@ -5,9 +5,10 @@ import (
 	"encoding/hex"
 	"errors"
 	lru "github.com/hashicorp/golang-lru"
+	"github.com/moldabekov/virusgotal/vt"
 	"github.com/rezen/query/http"
 	log "github.com/sirupsen/logrus"
-
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
@@ -137,7 +138,6 @@ func (q *HttpQueryer) Execute(query *HttpQuery) ([]QueryResult, error) {
 
 	if err != nil {
 		q.ErrorCount += 1
-		q.Logger.Error(err)
 	}
 	return results, err
 }
@@ -162,6 +162,7 @@ func DefaultHttpQueryer() *HttpQueryer {
 		"status-code": queryStatusCode,
 		"regex":       queryRegex,
 		"redirects":   queryRedirects,
+		"virustotal":  queryVirustotal,
 		// "browser": queryBrowser, @todo for real browser execution
 		// "seo" // Check keyboard richness
 	}
@@ -222,6 +223,51 @@ func queryRedirects(q *HttpQuery) ([]QueryResult, error) {
 
 func queryBody(q *HttpQuery) ([]QueryResult, error) {
 	return []QueryResult{&TextResult{"body", q.Txn.Body()}}, nil
+}
+
+func queryVirustotal(q *HttpQuery) ([]QueryResult, error) {
+
+	vtotal, err := govt.New(govt.SetApikey(os.Getenv("VT_API_KEY")))
+
+	if err != nil {
+		return []QueryResult{}, err
+	}
+
+	report, err := vtotal.GetUrlReport(q.Target.Url)
+
+	if err != nil {
+		return []QueryResult{}, err
+	}
+
+	detected := 0
+	unrated := 0
+	clean := 0
+
+	for _, scan := range report.Scans {
+
+		if scan.Detected {
+			detected += 1
+		}
+
+		if scan.Result == "unrated site" {
+			unrated += 1
+		} else {
+			clean += 1
+		}
+		/*
+			txn.Results = append(txn.Results, &MapResult{map[string]string{
+				"scanner":  key,
+				"detected": strconv.FormatBool(scan.Detected),
+				"result":   scan.Result,
+			}})
+		*/
+	}
+
+	return []QueryResult{&MapResult{map[string]string{
+		"detected": strconv.Itoa(detected),
+		"unrated":  strconv.Itoa(unrated),
+		"clean":    strconv.Itoa(clean),
+	}}}, nil
 }
 
 func querySha1(q *HttpQuery) ([]QueryResult, error) {

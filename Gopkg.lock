@@ -25,38 +25,6 @@
   revision = "975c7833b02e9b09b05f41cb5650339b4e913467"
 
 [[projects]]
-  branch = "master"
-  digest = "1:0fd51c3acd88b01c118d0a13598bb33f6b9954011588a1864d366e8b44a01153"
-  name = "github.com/gobs/httpclient"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "d4beeaaac19782a857039e2e0232128f988aae59"
-
-[[projects]]
-  branch = "master"
-  digest = "1:766bf25377bc2a5bd7b7b2bbe3a490200be68cc325c63db9f338316357086f2f"
-  name = "github.com/gobs/pretty"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "09732c25a95b8e10e85177a3201cf4c7fe35a377"
-
-[[projects]]
-  branch = "master"
-  digest = "1:1496b3a835688df2d11c7357c120b1134a939afbcd16370a1ab6f1272ec8a377"
-  name = "github.com/gobs/simplejson"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "c70e6bd5e26b37fd37b5225d00d600b93d348e58"
-
-[[projects]]
-  digest = "1:7b5c6e2eeaa9ae5907c391a91c132abfd5c9e8a784a341b5625e750c67e6825d"
-  name = "github.com/gorilla/websocket"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "66b9c49e59c6c48f0ffce28c2d8b8a5678502c6d"
-  version = "v1.4.0"
-
-[[projects]]
   digest = "1:d15ee511aa0f56baacc1eb4c6b922fa1c03b38413b6be18166b996d82a0156ea"
   name = "github.com/hashicorp/golang-lru"
   packages = [
@@ -92,13 +60,6 @@
   version = "1.0.0"
 
 [[projects]]
-  digest = "1:d1d928e677e2ba3ba94c07b4ed45196cfda312b0131c4bf6d3a8287113be52a2"
-  name = "github.com/mcuadros/go-version"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "6d5863ca60fa6fe914b5fd43ed8533d7567c5b0b"
-
-[[projects]]
   digest = "1:4c195ae33dbe8df4eb3485f3357788f47b614547abcd048cbcc59d9025db6b8d"
   name = "github.com/miekg/dns"
   packages = ["."]
@@ -107,20 +68,12 @@
   version = "v1.1.6"
 
 [[projects]]
-  branch = "master"
-  digest = "1:fc0a6090d16ce2e378fb61fd4e57082864be0bf46a84f64907812482aa0c2cad"
-  name = "github.com/raff/godet"
-  packages = ["."]
+  digest = "1:2edc2eb4a27cd78aad8148957332b1867f72d87ecdd7ba3695d76babaaa6fd92"
+  name = "github.com/moldabekov/virusgotal"
+  packages = ["vt"]
   pruneopts = "UT"
-  revision = "7f5db8f2b8ab95373b0327aa39b63e5542644bc8"
-
-[[projects]]
-  digest = "1:a55ee8fd56cd44f724fd9739562c40bcc481543f97fd30887d38389100b71a9b"
-  name = "github.com/rezen/retirejs"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "73cd94c0e83acef7f1712e48f96d2ea8e9edefdf"
-  version = "0.1"
+  revision = "c31ced88052f8572090b82390a3b926810036a29"
+  version = "1.0.2"
 
 [[projects]]
   branch = "master"
@@ -248,8 +201,7 @@
     "github.com/hashicorp/golang-lru",
     "github.com/likexian/whois-parser-go",
     "github.com/miekg/dns",
-    "github.com/raff/godet",
-    "github.com/rezen/retirejs",
+    "github.com/moldabekov/virusgotal/vt",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
     "golang.org/x/net/publicsuffix",

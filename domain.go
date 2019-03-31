@@ -104,7 +104,7 @@ func DefaultDnsQueryer() *DnsQueryer {
 type dnsQueryExecutor func(q *Query) ([]QueryResult, error)
 
 func queryWhois(q *Query) ([]QueryResult, error) {
-	details := dns.CheckWhois(q.Target.Hostname)
+	details := dns.CheckWhoisNet(q.Target.Parsed)
 	result := &WhoisResult{details}
 
 	if len(q.Select) > 1 {
@@ -121,7 +121,6 @@ func queryWhois(q *Query) ([]QueryResult, error) {
 
 func queryQtype(qtype string) dnsQueryExecutor {
 	qtype = strings.ToLower(qtype)
-
 	return func(q *Query) ([]QueryResult, error) {
 		details, err := dns.CheckDNSRecord(q.Target.AsUrl(), qtype)
 
@@ -134,11 +133,11 @@ func queryQtype(qtype string) dnsQueryExecutor {
 			results = append(results, &MapResult{map[string]string{
 				"type":   answer[1],
 				"answer": answer[0],
+				"server": details.Server,
 			}})
 		}
 		return results, nil
 	}
-
 }
 
 func queryMostDns(q *Query) ([]QueryResult, error) {
@@ -147,16 +146,17 @@ func queryMostDns(q *Query) ([]QueryResult, error) {
 	results := []QueryResult{}
 
 	if err != nil {
-		panic(err)
+		return results, err
 	}
+
 	for _, d := range details {
 		for _, answer := range d.Answers() {
 			results = append(results, &MapResult{map[string]string{
 				"type":   answer[1],
 				"answer": answer[0],
+				"server": d.Server,
 			}})
 		}
-
 	}
 	return results, nil
 }

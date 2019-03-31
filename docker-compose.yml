@@ -39,4 +39,4 @@ services:
     volumes:
       - ./_builds:/go/_builds
     working_dir: /go/_builds
-    command: bash -c 'while [ `ls -l | wc -l` -lt  4 ]; do sleep 1; done; find ./ -type f -name "awwwq*"  ! -name "*.*" | xargs -I{} tar czvf {}.tar.gz {} && sha256sum * | tee sums.txt'
+    command: bash -c 'while [ `ls -l | wc -l` -lt  4 ]; do sleep 1; done; find ./ -type f -name "awwwq*"  ! -name "*.*" | xargs -I{} tar czvf {}.tar.gz {} && sha256sum * | tee sha256sums.txt'

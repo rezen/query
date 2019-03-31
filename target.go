@@ -1,7 +1,7 @@
 package query
 
 import (
-	"net"
+	// "net"
 	"net/url"
 	"strings"
 )
@@ -43,19 +43,20 @@ func TargetFromString(target string) Target {
 		panic(err)
 	}
 
-	hostname := parsed.Host
+	/*
+		hostname := parsed.Host
 
-	if strings.Contains(hostname, ":") {
-		hostname, _, _ = net.SplitHostPort(hostname)
-	}
+		if strings.Contains(hostname, ":") {
+			hostname, _, _ = net.SplitHostPort(hostname)
+		}
 
-	if len(hostname) == 0 {
-		hostname = parsed.String()
-	}
+		if len(hostname) == 0 {
+			hostname = parsed.String()
+		}*/
 
 	return Target{
 		Url:      target,
 		Parsed:   parsed,
-		Hostname: hostname,
+		Hostname: parsed.Hostname(),
 	}
 }

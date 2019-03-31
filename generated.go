@@ -1,11 +1,10 @@
-
 package query
 
 import (
-	"github.com/rezen/query/ssl"
 	"github.com/rezen/query/dns"
-	"strings"
+	"github.com/rezen/query/ssl"
 	"strconv"
+	"strings"
 )
 
 type WhoisResult struct {
@@ -13,7 +12,7 @@ type WhoisResult struct {
 }
 
 func (d *WhoisResult) Attr(attr string) string {
-	switch attr { 
+	switch attr {
 	case "admin":
 		return d.Src.Admin
 	case "admin_email":
@@ -30,8 +29,8 @@ func (d *WhoisResult) Attr(attr string) string {
 		return strings.Join(d.Src.NameServers, ",")
 	case "dnssec":
 		return d.Src.DomainDNSSEC
-	case "text":
-		return d.Src.Text
+	//case "raw":
+	//	return d.Src.Raw
 	case "status":
 		return strings.Join(d.Src.Status, ",")
 	default:
@@ -40,7 +39,7 @@ func (d *WhoisResult) Attr(attr string) string {
 }
 
 func (d *WhoisResult) HasAttr(attr string) bool {
-	switch attr { 
+	switch attr {
 	case "admin":
 		return true
 	case "admin_email":
@@ -67,7 +66,7 @@ func (d *WhoisResult) HasAttr(attr string) bool {
 }
 
 func (d *WhoisResult) Attrs() []string {
-	return []string{ "admin","admin_email","organization","created_at","expires_at","registrar_name","ns","dnssec","text","status",}
+	return []string{"admin", "admin_email", "organization", "created_at", "expires_at", "registrar_name", "ns", "dnssec", "status"}
 }
 
 func (d *WhoisResult) AsText() string {
@@ -82,14 +81,12 @@ func (d *WhoisResult) AsText() string {
 	return text
 }
 
-
-
 type CertificateResult struct {
 	Src *ssl.Certificate
 }
 
 func (d *CertificateResult) Attr(attr string) string {
-	switch attr { 
+	switch attr {
 	case "common_name":
 		return d.Src.CommonName
 	case "issuer":
@@ -112,7 +109,7 @@ func (d *CertificateResult) Attr(attr string) string {
 }
 
 func (d *CertificateResult) HasAttr(attr string) bool {
-	switch attr { 
+	switch attr {
 	case "common_name":
 		return true
 	case "issuer":
@@ -135,7 +132,7 @@ func (d *CertificateResult) HasAttr(attr string) bool {
 }
 
 func (d *CertificateResult) Attrs() []string {
-	return []string{ "common_name","issuer","expiration","body","domains","is_wildcard","has_expired","error",}
+	return []string{"common_name", "issuer", "expiration", "body", "domains", "is_wildcard", "has_expired", "error"}
 }
 
 func (d *CertificateResult) AsText() string {
@@ -149,4 +146,3 @@ func (d *CertificateResult) AsText() string {
 	}
 	return text
 }
-
