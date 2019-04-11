@@ -4,16 +4,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"github.com/google/safebrowsing"
 	lru "github.com/hashicorp/golang-lru"
-	"github.com/moldabekov/virusgotal/vt"
 	"github.com/rezen/query/http"
 	log "github.com/sirupsen/logrus"
 
-	"fmt"
-	"os"
-	"os/user"
-	"path"
 	"regexp"
 	"sort"
 	"strconv"
@@ -172,6 +166,7 @@ func DefaultHttpQueryer() *HttpQueryer {
 	// making queryer available
 	executors := map[string]queryExecutor{
 		// "?" // For help
+		// "cookie" to parse out individual cookies
 		"*":            queryAll,
 		"body":         queryBody,
 		"header":       queryHeader,
@@ -269,84 +264,6 @@ func queryRedirects(q *HttpQuery) ([]QueryResult, error) {
 
 func queryBody(q *HttpQuery) ([]QueryResult, error) {
 	return []QueryResult{&TextResult{"body", q.Txn.Body()}}, nil
-}
-
-func querySafeBrowsing(q *HttpQuery) ([]QueryResult, error) {
-	key := os.Getenv("SAFE_BROWSING_API_KEY")
-	// setforspecialdomain.com
-	usr, err := user.Current()
-
-	sb, err := safebrowsing.NewSafeBrowser(safebrowsing.Config{
-		APIKey:    key,
-		DBPath:    path.Join(usr.HomeDir, ".awwwq", "safebrowsing"),
-		Logger:    os.Stderr,
-		ServerURL: safebrowsing.DefaultServerURL,
-		// ProxyURL:  *proxyFlag,
-	})
-
-	if err != nil {
-		return []QueryResult{}, err
-	}
-
-	threats, err := sb.LookupURLs([]string{q.Target.Url})
-	fmt.Println(threats)
-	/*
-		fmt.Println(threats[0][0].Pattern)
-
-				ThreatType      ThreatType
-			PlatformType    PlatformType
-			ThreatEntryType ThreatEntryType
-
-		// 	fmt.Println(threats[0][0].Pattern)
-		fmt.Println(threats[0][0].ThreatDescriptor.ThreatType)
-		fmt.Println(threats[0][0].ThreatDescriptor.PlatformTypels)
-	*/
-	fmt.Println(err)
-	return []QueryResult{}, nil
-}
-
-func queryVirustotal(q *HttpQuery) ([]QueryResult, error) {
-	vtotal, err := govt.New(govt.SetApikey(os.Getenv("VIRUS_TOTAL_API_KEY")))
-
-	if err != nil {
-		return []QueryResult{}, err
-	}
-
-	report, err := vtotal.GetUrlReport(q.Target.Url)
-
-	if err != nil {
-		return []QueryResult{}, err
-	}
-
-	detected := 0
-	unrated := 0
-	clean := 0
-
-	for _, scan := range report.Scans {
-
-		if scan.Detected {
-			detected += 1
-		}
-
-		if scan.Result == "unrated site" {
-			unrated += 1
-		} else {
-			clean += 1
-		}
-		/*
-			txn.Results = append(txn.Results, &MapResult{map[string]string{
-				"scanner":  key,
-				"detected": strconv.FormatBool(scan.Detected),
-				"result":   scan.Result,
-			}})
-		*/
-	}
-
-	return []QueryResult{&MapResult{map[string]string{
-		"detected": strconv.Itoa(detected),
-		"unrated":  strconv.Itoa(unrated),
-		"clean":    strconv.Itoa(clean),
-	}, "virustotal"}}, nil
 }
 
 func querySha1(q *HttpQuery) ([]QueryResult, error) {
