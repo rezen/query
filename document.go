@@ -127,8 +127,8 @@ func (q ElementResult) Attr(attr string) string {
 
 func executeQueryWords(q *DocQuery) ([]QueryResult, error) {
 	results := []QueryResult{}
-	words := DocWords(*q.Doc)
-
+	reader := strings.NewReader(q.Txn.Body())
+	words := HtmlWords(reader)
 	for _, word := range words {
 		results = append(results, &TextResult{"words", word})
 	}
