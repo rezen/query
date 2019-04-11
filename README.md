@@ -1,11 +1,35 @@
 # awwwq
-Query for facts related to your site!
+How did you get a status code with `curl`? What were the `dig` flags & args to get the nameserver for a domain? Without notes or `cheat` you have to search for that info every time. What if instead there was a basic query language to get that kind of info that didn't require you to memorize all the flags? That would be awwwesome!
 
+
+```sh
+# Get a page title
+./awwwq -q 'http > doc > title' -t https://ahermosilla.com 
+
+# Get IP we connected to 
+./awwwq -q 'http > ip' -t https://ahermosilla.com 
+
+# Get the words on a page
+./awwwq  -q 'http > doc > words' -t https://ahermosilla.com
+
+# Check if a site is clean
+./awwwq  -q "http > virustotal" -t http://setforspecialdomain.com
+
+# Check the status code for a resource
+./awwwq -q "http .git/config > header > status-code" -t http://ahermosilla.com
+
+# Get whois data
+./awwwq -q "domain > whois" -t ahermosilla.com
+
+# Get name servers  
+./awwwq -q "domain > ns" -t ahermosilla.com
+```
 
 ## Requirements
 - golang 1.11+
 
 
+### Development
 ```
 # Running tests with specific prefix
 go test -v ./ -run TestHttp
@@ -19,10 +43,6 @@ go build -o _builds/awwwq cmd/awwwdit/main.go
 
 # ... or using Docker
 docker-compose up
-
-# Usage
-
-./awwwq -t http://ahermosilla.com -q 'http > doc > title'
 ```
 
 ## Notes
