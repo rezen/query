@@ -91,11 +91,12 @@ func (r TextResult) HasAttr(attr string) bool {
 }
 
 func (r TextResult) AsText() string {
-	return r.Text
+	return r.Key + ": " + r.Text
 }
 
 type MapResult struct {
 	Data map[string]string
+	Key  string
 }
 
 func (r *MapResult) Attr(attr string) string {
@@ -109,9 +110,9 @@ func (r *MapResult) HasAttr(attr string) bool {
 
 func (r *MapResult) AsText() string {
 	// @todo
-	text := ""
+	text := r.Key + ":\n"
 	for key, value := range r.Data {
-		text += " - " + key + ": " + value + "\n"
+		text += "  - " + key + ": " + value + "\n"
 	}
 	return text
 

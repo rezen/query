@@ -134,7 +134,7 @@ func queryQtype(qtype string) dnsQueryExecutor {
 				"type":   answer[1],
 				"answer": answer[0],
 				"server": details.Server,
-			}})
+			}, "dns"})
 		}
 		return results, nil
 	}
@@ -155,7 +155,7 @@ func queryMostDns(q *Query) ([]QueryResult, error) {
 				"type":   answer[1],
 				"answer": answer[0],
 				"server": d.Server,
-			}})
+			}, "dns"})
 		}
 	}
 	return results, nil

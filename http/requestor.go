@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/cookiejar"
+	"net/http/httptrace"
 	"net/url"
 	"os"
 	"strings"
@@ -62,9 +63,6 @@ func getTransport(config *RequestorConfig) *tweakedTransport {
 	statusCodes := make([]UrlStatus, 0)
 
 	transport := &http.Transport{
-		Dial: (&net.Dialer{
-			Timeout: 3 * time.Second,
-		}).Dial,
 		DialContext: (&net.Dialer{
 			Timeout:   3 * time.Second,
 			KeepAlive: 3 * time.Second,
@@ -156,6 +154,20 @@ func (r *Requestor) Get(path string) *Transaction {
 			return http.ErrUseLastResponse
 		},
 	}
+	address := ""
+	// https://blog.golang.org/http-tracing
+	trace := &httptrace.ClientTrace{
+		DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
+			fmt.Printf("DNS Info: %+v\n", dnsInfo)
+		},
+		GotConn: func(connInfo httptrace.GotConnInfo) {
+			fmt.Printf("Got Conn: %+v\n", connInfo)
+		},
+		ConnectDone: func(network, addr string, err error) {
+			address = addr
+		},
+	}
+	request = request.WithContext(httptrace.WithClientTrace(request.Context(), trace))
 
 	response, err := client.Do(request)
 
@@ -180,6 +192,7 @@ func (r *Requestor) Get(path string) *Transaction {
 		Duration:        time.Since(start),
 		FirstStatusCode: firstCode,
 		RedirectsHttp:   strings.Contains(request.URL.String(), "https:") && strings.Contains(updated.String(), "http:"),
+		IP:              address,
 	}
 
 	if err == nil {

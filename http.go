@@ -1,14 +1,19 @@
 package query
 
 import (
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"github.com/google/safebrowsing"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/moldabekov/virusgotal/vt"
 	"github.com/rezen/query/http"
 	log "github.com/sirupsen/logrus"
+
+	"fmt"
 	"os"
+	"os/user"
+	"path"
 	"regexp"
 	"sort"
 	"strconv"
@@ -151,18 +156,34 @@ func (q *HttpQueryer) Selectable() []string {
 	return items
 }
 
+/*
+// @todo explore?
+type Attribute struct {
+	Name string
+	Queryer func ...
+	Calculated bool // Is field calculated, like regex?
+	IncludeInAll bool // Include in * query data
+	Nested bool // Can be queried ?
+}
+*/
 func DefaultHttpQueryer() *HttpQueryer {
 	// When exporting to JSON, iterate through executors
+	// Check environment for requirements before
+	// making queryer available
 	executors := map[string]queryExecutor{
-		"body":        queryBody,
-		"header":      queryHeader,
-		"hash":        queryHash,
-		"sha1":        querySha1,
-		"doc":         queryDoc,
-		"status-code": queryStatusCode,
-		"regex":       queryRegex,
-		"redirects":   queryRedirects,
-		"virustotal":  queryVirustotal,
+		// "?" // For help
+		"*":            queryAll,
+		"body":         queryBody,
+		"header":       queryHeader,
+		"hash":         queryHash,
+		"sha256":       querySha1,
+		"doc":          queryDoc,
+		"status-code":  queryStatusCode,
+		"ip":           queryIp,
+		"regex":        queryRegex,
+		"redirects":    queryRedirects,
+		"virustotal":   queryVirustotal,
+		"safebrowsing": querySafeBrowsing,
 		// "browser": queryBrowser, @todo for real browser execution
 		// "seo" // Check keyboard richness
 	}
@@ -192,9 +213,34 @@ func queryDoc(q *HttpQuery) ([]QueryResult, error) {
 	return query.Execute()
 }
 
+func queryAll(q *HttpQuery) ([]QueryResult, error) {
+	results := []QueryResult{}
+	include := []queryExecutor{
+		queryStatusCode,
+		queryIp,
+		queryRedirects,
+		queryHash,
+		queryHeader,
+	}
+
+	for _, fn := range include {
+		res, err := fn(q)
+		if err != nil {
+			continue
+		}
+
+		results = append(results, res...)
+	}
+
+	return results, nil
+}
 func queryStatusCode(q *HttpQuery) ([]QueryResult, error) {
 	value := strconv.Itoa(q.Txn.StatusCode())
 	return []QueryResult{&TextResult{"status_code", value}}, nil
+}
+
+func queryIp(q *HttpQuery) ([]QueryResult, error) {
+	return []QueryResult{&TextResult{"ip", q.Txn.IP}}, nil
 }
 
 func queryRegex(q *HttpQuery) ([]QueryResult, error) {
@@ -225,9 +271,42 @@ func queryBody(q *HttpQuery) ([]QueryResult, error) {
 	return []QueryResult{&TextResult{"body", q.Txn.Body()}}, nil
 }
 
-func queryVirustotal(q *HttpQuery) ([]QueryResult, error) {
+func querySafeBrowsing(q *HttpQuery) ([]QueryResult, error) {
+	key := os.Getenv("SAFE_BROWSING_API_KEY")
+	// setforspecialdomain.com
+	usr, err := user.Current()
 
-	vtotal, err := govt.New(govt.SetApikey(os.Getenv("VT_API_KEY")))
+	sb, err := safebrowsing.NewSafeBrowser(safebrowsing.Config{
+		APIKey:    key,
+		DBPath:    path.Join(usr.HomeDir, ".awwwq", "safebrowsing"),
+		Logger:    os.Stderr,
+		ServerURL: safebrowsing.DefaultServerURL,
+		// ProxyURL:  *proxyFlag,
+	})
+
+	if err != nil {
+		return []QueryResult{}, err
+	}
+
+	threats, err := sb.LookupURLs([]string{q.Target.Url})
+	fmt.Println(threats)
+	/*
+		fmt.Println(threats[0][0].Pattern)
+
+				ThreatType      ThreatType
+			PlatformType    PlatformType
+			ThreatEntryType ThreatEntryType
+
+		// 	fmt.Println(threats[0][0].Pattern)
+		fmt.Println(threats[0][0].ThreatDescriptor.ThreatType)
+		fmt.Println(threats[0][0].ThreatDescriptor.PlatformTypels)
+	*/
+	fmt.Println(err)
+	return []QueryResult{}, nil
+}
+
+func queryVirustotal(q *HttpQuery) ([]QueryResult, error) {
+	vtotal, err := govt.New(govt.SetApikey(os.Getenv("VIRUS_TOTAL_API_KEY")))
 
 	if err != nil {
 		return []QueryResult{}, err
@@ -267,14 +346,14 @@ func queryVirustotal(q *HttpQuery) ([]QueryResult, error) {
 		"detected": strconv.Itoa(detected),
 		"unrated":  strconv.Itoa(unrated),
 		"clean":    strconv.Itoa(clean),
-	}}}, nil
+	}, "virustotal"}}, nil
 }
 
 func querySha1(q *HttpQuery) ([]QueryResult, error) {
-	h := sha1.New()
+	h := sha256.New()
 	h.Write([]byte(q.Txn.Body()))
 	hash := hex.EncodeToString(h.Sum(nil))
-	return []QueryResult{&TextResult{"sha1", "sha1:" + hash}}, nil
+	return []QueryResult{&TextResult{"sha256", "sha256:" + hash}}, nil
 }
 
 func queryHash(q *HttpQuery) ([]QueryResult, error) {
@@ -286,7 +365,7 @@ func queryHeader(q *HttpQuery) ([]QueryResult, error) {
 	if len(q.Select) == 1 {
 		headers := q.Txn.Headers()
 		headers["status-code"] = strconv.Itoa(q.Txn.StatusCode())
-		return []QueryResult{&MapResult{headers}}, nil
+		return []QueryResult{&MapResult{headers, "headers"}}, nil
 	}
 
 	// also option for key patterns such as x-*

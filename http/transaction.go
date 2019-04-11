@@ -55,6 +55,7 @@ type Transaction struct {
 	Duration        time.Duration  `json:"-"`
 	RedirectsHttp   bool           `json:"-"`
 	FirstStatusCode int            `json:"first_status_code"`
+	IP              string         `json:"ip"`
 }
 
 type TransactionJson struct {

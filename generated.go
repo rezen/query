@@ -102,6 +102,9 @@ func (d *CertificateResult) Attr(attr string) string {
 	case "has_expired":
 		return strconv.FormatBool(d.Src.HasExpired)
 	case "error":
+		if d.Src.Error == nil {
+			return ""
+		}
 		return d.Src.Error.Error()
 	default:
 		return ""
@@ -140,7 +143,7 @@ func (d *CertificateResult) AsText() string {
 	if s1, ok := iface.(interface{ AsText() string }); ok {
 		return s1.AsText()
 	}
-	text := ""
+	text := "certificate:\n"
 	for _, attr := range d.Attrs() {
 		text += " - " + attr + ": " + d.Attr(attr) + "\n"
 	}

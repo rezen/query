@@ -25,6 +25,28 @@
   revision = "975c7833b02e9b09b05f41cb5650339b4e913467"
 
 [[projects]]
+  digest = "1:98850af67dabaaf686237bb7da5111e978a52133466572cdd5c6a1f7e5dcab84"
+  name = "github.com/golang/protobuf"
+  packages = [
+    "proto",
+    "ptypes/duration",
+  ]
+  pruneopts = "UT"
+  revision = "b5d812f8a3706043e23a9cd5babf2e5423744d30"
+  version = "v1.3.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:f71f24fd5f3a48b086a90eee1e030177193b2dfc3520c16bdb7448434b8b6829"
+  name = "github.com/google/safebrowsing"
+  packages = [
+    ".",
+    "internal/safebrowsing_proto",
+  ]
+  pruneopts = "UT"
+  revision = "92a16cf6d02871018d6a426fb7886e34022c5c59"
+
+[[projects]]
   digest = "1:d15ee511aa0f56baacc1eb4c6b922fa1c03b38413b6be18166b996d82a0156ea"
   name = "github.com/hashicorp/golang-lru"
   packages = [
@@ -198,6 +220,7 @@
   input-imports = [
     "github.com/PuerkitoBio/goquery",
     "github.com/domainr/whois",
+    "github.com/google/safebrowsing",
     "github.com/hashicorp/golang-lru",
     "github.com/likexian/whois-parser-go",
     "github.com/miekg/dns",

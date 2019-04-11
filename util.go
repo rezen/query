@@ -72,7 +72,7 @@ func AsText(s interface{}) string {
 	}
 
 	// @todo if struct ... vs
-	text := ""
+	text := "x: "
 	// @todo make more effecient or generate code
 	t := reflect.TypeOf(s)
 

@@ -1,7 +1,6 @@
 package query
 
 import (
-	"fmt"
 	"github.com/rezen/query/ssl"
 	log "github.com/sirupsen/logrus"
 	"strings"
@@ -57,7 +56,6 @@ func (s *SslQueryer) Exec(q *Query) Transaction {
 	txn.Duration = time.Since(start)
 
 	if err != nil {
-		fmt.Println(err)
 		txn.Error = err
 		return txn
 	}
@@ -66,12 +64,16 @@ func (s *SslQueryer) Exec(q *Query) Transaction {
 	if strings.Contains(selector, "chain") {
 		// @todo
 	}
-	result := &CertificateResult{&details}
+	result := &CertificateResult{details}
 
 	if selector == "*" {
 		txn.Results = append(txn.Results, result)
 	} else if result.HasAttr(selector) {
-		txn.Results = append(txn.Results, &TextResult{selector, result.Attr(selector)})
+		if details.Error != nil {
+			txn.Results = append(txn.Results, &TextResult{"error", details.Error.Error()})
+		} else {
+			txn.Results = append(txn.Results, &TextResult{selector, result.Attr(selector)})
+		}
 	}
 
 	return txn

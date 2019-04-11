@@ -60,7 +60,7 @@ func (d *{{ .Name }}Result) AsText() string {
 	if s1, ok := iface.(interface{ AsText() string }); ok {
 		return s1.AsText()
 	}
-	text := ""
+	text := "todo:\n"
 	for _, attr := range d.Attrs() {
 		text += " - " + attr + ": " + d.Attr(attr) + "\n"
 	}
@@ -137,6 +137,7 @@ func GenerateStuff() {
 
 						if field.Type.Name() == "error" {
 							getter += ".Error()"
+							getter = "if d.Src.Error == nil {return \"\"}\n" + getter
 						}
 						switch field.Type {
 						case reflect.TypeOf(time.Time{}):

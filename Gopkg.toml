@@ -60,3 +60,7 @@
 [[constraint]]
   name = "github.com/moldabekov/virusgotal"
   version = "1.0.2"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/google/safebrowsing"

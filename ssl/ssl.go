@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	"net"
 	"net/url"
 	"strings"
@@ -22,13 +23,13 @@ type Certificate struct {
 	Error      error     `json:"error"`
 }
 
-func DetailsFromChain(chain []*x509.Certificate) Certificate {
+func DetailsFromChain(chain []*x509.Certificate) *Certificate {
 	cert := chain[0]
 	commonName := cert.Subject.CommonName
 	var data bytes.Buffer
 	pem.Encode(&data, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
 
-	certificate := Certificate{
+	certificate := &Certificate{
 		Body:       data.String(),
 		CommonName: commonName,
 		Issuer:     strings.Join(cert.Issuer.Organization, " "),
@@ -52,17 +53,27 @@ func DetailsFromChain(chain []*x509.Certificate) Certificate {
 }
 
 // https://github.com/mozilla/tls-observatory
-func CheckSSL(target *url.URL) (Certificate, error) {
+func CheckSSL(target *url.URL) (*Certificate, error) {
 	var conn *tls.Conn
 	var err1 error
 	var err2 error
-	var details Certificate
+	var details *Certificate
 
 	host := target.Host
 
+	// net.JoinHostPort("", port)
 	if !strings.Contains(host, ":") {
 		host = host + ":443"
 	}
+
+	// First check if the port is open
+	conn1, err := net.DialTimeout("tcp", host, time.Duration(3)*time.Second)
+	if err != nil {
+		return &Certificate{Error: fmt.Errorf("Issue connecting to host port 443, probably does serve https")}, nil
+	}
+
+	// If there was an error ... closing would cause a panic
+	conn1.Close()
 
 	dialer := &net.Dialer{Timeout: 3 * time.Second}
 	// VerifyPeerCertificate
@@ -74,20 +85,23 @@ func CheckSSL(target *url.URL) (Certificate, error) {
 		conn, err2 = tls.DialWithDialer(dialer, "tcp", host, config)
 	}
 
+	if err1 != nil && err2 != nil {
+		return &Certificate{Error: err1}, err1
+	}
+
 	defer conn.Close()
 
 	chain := conn.ConnectionState().VerifiedChains
 	chain2 := conn.ConnectionState().PeerCertificates
+
 	if len(chain) > 0 {
 		details = DetailsFromChain(chain[0])
-
 	} else {
 		details = DetailsFromChain(chain2)
 	}
 
 	if err1 != nil {
 		details.Error = err1
-
 	} else if err2 != nil {
 		details.Error = err2
 	}
