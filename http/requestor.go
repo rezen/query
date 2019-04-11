@@ -157,12 +157,8 @@ func (r *Requestor) Get(path string) *Transaction {
 	address := ""
 	// https://blog.golang.org/http-tracing
 	trace := &httptrace.ClientTrace{
-		DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
-			fmt.Printf("DNS Info: %+v\n", dnsInfo)
-		},
-		GotConn: func(connInfo httptrace.GotConnInfo) {
-			fmt.Printf("Got Conn: %+v\n", connInfo)
-		},
+		DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {},
+		GotConn: func(connInfo httptrace.GotConnInfo) {},
 		ConnectDone: func(network, addr string, err error) {
 			address = addr
 		},
